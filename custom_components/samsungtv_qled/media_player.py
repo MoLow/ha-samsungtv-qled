@@ -1,5 +1,6 @@
 """Support for interface with an Samsung TV."""
 import asyncio
+from async_property import async_property
 from datetime import timedelta
 import logging
 import socket
@@ -18,7 +19,7 @@ from .samsungtvctl.smartthings import SmartthingsTV
 
 from homeassistant import util
 from homeassistant.components.media_player import (
-    MediaPlayerDevice,
+    MediaPlayerEntity,
     PLATFORM_SCHEMA,
     DEVICE_CLASS_TV,
 )
@@ -160,7 +161,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         _LOGGER.info("Ignoring duplicate Samsung TV %s:%d", host, port)
 
 
-class SamsungTVDevice(MediaPlayerDevice):
+class SamsungTVDevice(MediaPlayerEntity):
     """Representation of a Samsung TV."""
 
     def __init__(self, host, port, name, timeout, mac, uuid, update_method, update_custom_ping_url, source_list, app_list, api_key, device_id, expand_sources):
@@ -349,10 +350,10 @@ class SamsungTVDevice(MediaPlayerDevice):
         """Return the state of the device."""
         return self._state
 
-    @property
-    def is_volume_muted(self):
+    @async_property
+    async def is_volume_muted(self):
         """Boolean if volume is currently muted."""
-        self._muted = self._upnp.get_mute()
+        self._muted = await self.hass.async_add_job(self._upnp.get_mute)
         return self._muted
 
     @property
@@ -373,18 +374,20 @@ class SamsungTVDevice(MediaPlayerDevice):
 
         return source_list
 
-    @property
-    def volume_level(self):
+    @async_property
+    async def volume_level(self):
         """Volume level of the media player (0..1)."""
-        self._volume = int(self._upnp.get_volume()) / 100
+        volume = await self.hass.async_add_job(self._upnp.get_volume)
+        self._volume = volume / 100
         return self._volume
     
-    @property
-    def source(self):
+    @async_property
+    async def source(self):
         """Return the current input source."""
         if self._state != STATE_OFF and self._smarttv is not None:
-            if self._upnp.get_running_app() != None:
-                self._source = self._upnp.get_running_app()
+            running_app = await self.hass.async_add_job(self._upnp.get_running_app)
+            if running_app != None:
+                self._source = running_app
             else:
                 if self._expand_sources:
                     if len(self._smarttv._source) > 0:
@@ -466,9 +469,9 @@ class SamsungTVDevice(MediaPlayerDevice):
         """Send mute command."""
         self.send_command("KEY_MUTE")
 
-    def set_volume_level(self, volume):
+    async def set_volume_level(self, volume):
         """Set volume level, range 0..1."""
-        self._upnp.set_volume(int(volume*100))
+        await self.hass.async_add_job(self._upnp.set_volume, int(volume*100))
 
     def media_play_pause(self):
         """Simulate play pause media player."""
@@ -533,12 +536,12 @@ class SamsungTVDevice(MediaPlayerDevice):
                 _LOGGER.error('Media ID must be an url (ex: "http://"')
                 return
 
-            self._upnp.set_current_media(media_id)
+            await self.hass.async_add_job(self._upnp.set_current_media, media_id)
             self._playing = True
 
         # Trying to make stream component work on TV
         elif media_type == "application/vnd.apple.mpegurl":
-            self._upnp.set_current_media(media_id)
+            await self.hass.async_add_job(self._upnp.set_current_media, media_id)
             self._playing = True
 
         else:

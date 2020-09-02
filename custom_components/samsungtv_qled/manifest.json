@@ -5,7 +5,8 @@
   "requirements": [
     "samsungtvws[websocket-client]==1.1.4",
     "websocket-client==0.56.0",
-    "wakeonlan==1.1.6"
+    "wakeonlan==1.1.6",
+    "async_property==0.2.1"
   ],
   "dependencies": [],
   "codeowners": ["@giefca"],
