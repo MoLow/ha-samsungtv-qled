@@ -104,7 +104,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     }
 )
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the Samsung TV platform."""
     known_devices = hass.data.get(KNOWN_DEVICES_KEY)
     if known_devices is None:
@@ -284,9 +284,29 @@ class SamsungTVDevice(MediaPlayerEntity):
         _LOGGER.debug("Gen installed app_list %s", clean_app_list)
 
     @util.Throttle(MIN_TIME_BETWEEN_SCANS, MIN_TIME_BETWEEN_FORCED_SCANS)
-    def update(self):
+    async def async_update(self):
         """Update state of device."""
-        self._ping_device()
+        await self.hass.async_add_job(self._ping_device)
+
+        self._muted = await self.hass.async_add_job(self._upnp.get_mute)
+
+        volume = await self.hass.async_add_job(self._upnp.get_volume)
+        self._volume = volume / 100
+
+        if self._state != STATE_OFF and self._smarttv is not None:
+            running_app = await self.hass.async_add_job(self._upnp.get_running_app)
+            if running_app != None:
+                self._source = running_app
+            else:
+                if self._expand_sources:
+                    if len(self._smarttv._source) > 0:
+                        self._source = self._smarttv._source_list[self._smarttv._source_list.index(self._smarttv._source) + 1]
+                    else:
+                        self._source = self._smarttv._source
+                else:
+                    self._source = self._smarttv._source
+        else:
+            self._source = None
 
     def send_command(self, payload, command_type = "send_key", retry_count = 1):
         """Send a key to the tv and handles exceptions."""
@@ -352,7 +372,6 @@ class SamsungTVDevice(MediaPlayerEntity):
     @property
     def is_volume_muted(self):
         """Boolean if volume is currently muted."""
-        self._muted = self._upnp.get_mute()
         return self._muted
 
     @property
@@ -376,27 +395,11 @@ class SamsungTVDevice(MediaPlayerEntity):
     @property
     def volume_level(self):
         """Volume level of the media player (0..1)."""
-        volume = self._upnp.get_volume()
-        self._volume = volume / 100
         return self._volume
     
     @property
     def source(self):
         """Return the current input source."""
-        if self._state != STATE_OFF and self._smarttv is not None:
-            running_app = self._upnp.get_running_app()
-            if running_app != None:
-                self._source = running_app
-            else:
-                if self._expand_sources:
-                    if len(self._smarttv._source) > 0:
-                        self._source = self._smarttv._source_list[self._smarttv._source_list.index(self._smarttv._source) + 1]
-                    else:
-                        self._source = self._smarttv._source
-                else:
-                    self._source = self._smarttv._source
-        else:
-            self._source = None
         return self._source
     
     @property
