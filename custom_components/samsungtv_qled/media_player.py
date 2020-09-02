@@ -350,7 +350,7 @@ class SamsungTVDevice(MediaPlayerEntity):
         return self._state
 
     @property
-    async def is_volume_muted(self):
+    def is_volume_muted(self):
         """Boolean if volume is currently muted."""
         self._muted = self._upnp.get_mute()
         return self._muted
@@ -374,14 +374,14 @@ class SamsungTVDevice(MediaPlayerEntity):
         return source_list
 
     @property
-    async def volume_level(self):
+    def volume_level(self):
         """Volume level of the media player (0..1)."""
         volume = self._upnp.get_volume()
         self._volume = volume / 100
         return self._volume
     
     @property
-    async def source(self):
+    def source(self):
         """Return the current input source."""
         if self._state != STATE_OFF and self._smarttv is not None:
             running_app = self._upnp.get_running_app()
