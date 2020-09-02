@@ -68,7 +68,7 @@ KNOWN_DEVICES_KEY = "samsungtv_known_devices"
 MEDIA_TYPE_KEY = "send_key"
 KEY_PRESS_TIMEOUT = 0.5
 UPDATE_PING_TIMEOUT = 1
-MIN_TIME_BETWEEN_FORCED_SCANS = timedelta(seconds=1)
+MIN_TIME_BETWEEN_FORCED_SCANS = timedelta(seconds=0.5)
 MIN_TIME_BETWEEN_SCANS = timedelta(seconds=10)
 
 SUPPORT_SAMSUNGTV = (
@@ -291,7 +291,7 @@ class SamsungTVDevice(MediaPlayerEntity):
         self._muted = await self.hass.async_add_job(self._upnp.get_mute)
 
         volume = await self.hass.async_add_job(self._upnp.get_volume)
-        self._volume = volume / 100
+        self._volume = int(volume) / 100
 
         if self._state != STATE_OFF and self._smarttv is not None:
             running_app = await self.hass.async_add_job(self._upnp.get_running_app)
