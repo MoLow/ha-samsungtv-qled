@@ -63,7 +63,7 @@ media_player:
 
 **mac (optional):** Required to turn on the TV.
 
-**update_method (optional):** Change the ping method used for state update. Values: "default", "ping", "smartthings". <br/>Smartthings seems to be more accurate.
+**update_method (optional):** Change the ping method used for state update. Values: "default", "ping", "smartthings" ,"dmr". <br/>Smartthings seems to be more accurate.
 
 **update_custom_ping_url (optional):** Custom endpoint to ping. Only if update_method is "ping".<br/>Recommanded value: "http://IP_ADDRESS:9197/dmr"
 

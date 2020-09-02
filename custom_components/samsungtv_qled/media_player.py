@@ -212,6 +212,8 @@ class SamsungTVDevice(MediaPlayerDevice):
         # Smartthing intégration
         if self._api_key is not None:
             self._smarttv = SmartthingsTV(api_key=api_key, device_id=device_id)
+        else:
+            self._smarttv = None;
 
     def _gen_token_file(self):
         self._token_file = os.path.dirname(os.path.realpath(__file__)) + '/token-' + self._host + '.txt'
@@ -248,7 +250,12 @@ class SamsungTVDevice(MediaPlayerDevice):
                 self._state = STATE_ON
             except:
                 self._state = STATE_OFF
-
+        elif self._update_method == "dmr":
+            try:
+                r = requests.get("http://{}:9197/dmr".format(self._config['host']), timeout=0.2)
+                self._state = STATE_ON
+            except:
+                self._state = STATE_OFF
         # Smartthings ping
         elif self._update_method == "smartthings":
             self._smarttv.device_update()
@@ -375,7 +382,7 @@ class SamsungTVDevice(MediaPlayerDevice):
     @property
     def source(self):
         """Return the current input source."""
-        if self._state != STATE_OFF:
+        if self._state != STATE_OFF and self._smarttv is not None:
             if self._upnp.get_running_app() != None:
                 self._source = self._upnp.get_running_app()
             else:
