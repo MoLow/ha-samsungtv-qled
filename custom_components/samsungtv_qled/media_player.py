@@ -1,6 +1,5 @@
 """Support for interface with an Samsung TV."""
 import asyncio
-from async_property import async_property
 from datetime import timedelta
 import logging
 import socket
@@ -350,10 +349,10 @@ class SamsungTVDevice(MediaPlayerEntity):
         """Return the state of the device."""
         return self._state
 
-    @async_property
+    @property
     async def is_volume_muted(self):
         """Boolean if volume is currently muted."""
-        self._muted = await self.hass.async_add_job(self._upnp.get_mute)
+        self._muted = self._upnp.get_mute()
         return self._muted
 
     @property
@@ -374,18 +373,18 @@ class SamsungTVDevice(MediaPlayerEntity):
 
         return source_list
 
-    @async_property
+    @property
     async def volume_level(self):
         """Volume level of the media player (0..1)."""
-        volume = await self.hass.async_add_job(self._upnp.get_volume)
+        volume = self._upnp.get_volume()
         self._volume = volume / 100
         return self._volume
     
-    @async_property
+    @property
     async def source(self):
         """Return the current input source."""
         if self._state != STATE_OFF and self._smarttv is not None:
-            running_app = await self.hass.async_add_job(self._upnp.get_running_app)
+            running_app = self._upnp.get_running_app()
             if running_app != None:
                 self._source = running_app
             else:
